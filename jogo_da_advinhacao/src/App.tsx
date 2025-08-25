@@ -13,8 +13,14 @@ function App() {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [letter, setLetter] = useState<string>("");
   const [lettersUsed, setLettersUsed] = useState<LettersUsedProps[]>([]);
+  const ATTEMPT_MARGIN = 5;
   function handleRestartGame() {
-    alert("Reniciar o jogo!");
+    const isConfirmed = window.confirm(
+      "Você tem certeza que deseja reiniciar o jogo?"
+    );
+    if (isConfirmed) {
+      startGame();
+    }
   }
 
   function startGame() {
@@ -24,6 +30,7 @@ function App() {
 
     setScore(0);
     setLetter("");
+    setLettersUsed([]);
   }
 
   function handleConfirm() {
@@ -39,6 +46,7 @@ function App() {
     );
 
     if (exists) {
+      setLetter("");
       return alert("Letra já utilizada");
     }
 
@@ -55,20 +63,49 @@ function App() {
     setLetter("");
   }
 
+  function endGame(message: string) {
+    alert(message);
+    startGame();
+  }
+
   useEffect(() => {
     startGame();
   }, []);
+
+  useEffect(() => {
+    if (!challenge) {
+      return;
+    }
+
+    setTimeout(() => {
+      if (score === challenge.word.length) {
+        return endGame("Você ganhou!");
+      }
+      const attemptLimit = challenge.word.length + ATTEMPT_MARGIN;
+      if (lettersUsed.length === attemptLimit) {
+        return endGame("Você perdeu!");
+      }
+    }, 200);
+  }, [score, lettersUsed.length]);
 
   if (!challenge) return null;
 
   return (
     <div className={styles.container}>
       <main>
-        <Header current={score} max={10} onRestart={handleRestartGame} />
+        <Header
+          current={lettersUsed.length}
+          max={challenge.word.length + ATTEMPT_MARGIN}
+          onRestart={handleRestartGame}
+        />
         <Tip tip={challenge.tip} />
         <div className={styles.word}>
-          {challenge.word.split("").map(() => {
-            return <Letter value="" />;
+          {challenge.word.split("").map((letter, index) => {
+            const letterUsed = lettersUsed.find(
+              (used) => used.value.toUpperCase() === letter.toUpperCase()
+            );
+
+            return <Letter key={index} value={letterUsed?.value || ""} />;
           })}
         </div>
 
